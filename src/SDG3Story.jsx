@@ -161,7 +161,7 @@ const SDG3Story = () => {
     return (
         <div
             style={{
-                transform: 'scale(1.3)',
+                transform: 'scale(1.2)',
                 transformOrigin: 'top left',
                 width: '76.92%',
                 height: '76.92%',
