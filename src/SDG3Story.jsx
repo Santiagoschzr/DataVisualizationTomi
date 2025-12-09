@@ -1,6 +1,13 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import {
-    LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, Area,
+    LineChart,
+    Line,
+    XAxis,
+    YAxis,
+    CartesianGrid,
+    Tooltip,
+    Legend,
+    Area,
     ResponsiveContainer
 } from 'recharts';
 import { Play, Pause, SkipForward, SkipBack, RotateCcw } from 'lucide-react';
@@ -8,7 +15,6 @@ import { Play, Pause, SkipForward, SkipBack, RotateCcw } from 'lucide-react';
 const SDG3Story = () => {
     const [currentStep, setCurrentStep] = useState(0);
     const [isPlaying, setIsPlaying] = useState(false);
-    const [animatedData, setAnimatedData] = useState([]);
 
     const fullData = [
         { year: 2000, reality: 23.4, target: 23.40, women: 25.8, men: 21.0 },
@@ -77,11 +83,13 @@ const SDG3Story = () => {
         }
     ];
 
-    useEffect(() => {
-        const step = steps[currentStep];
-        const dataToShow = fullData.filter(d => d.year <= (step.yearLimit || 2030));
-        setAnimatedData(dataToShow);
-    }, [currentStep]);
+    const step = steps[currentStep];
+
+    // 🔑 Derive animatedData from currentStep instead of storing in state
+    const animatedData = useMemo(
+        () => fullData.filter(d => d.year <= (step.yearLimit || 2030)),
+        [step.yearLimit]
+    );
 
     useEffect(() => {
         let interval;
@@ -97,7 +105,7 @@ const SDG3Story = () => {
             }, currentStep === 0 ? 2000 : 6000);
         }
         return () => clearInterval(interval);
-    }, [isPlaying, currentStep]);
+    }, [isPlaying, currentStep, steps.length]);
 
     const handleNext = () => {
         if (currentStep < steps.length - 1) {
@@ -118,7 +126,6 @@ const SDG3Story = () => {
         setIsPlaying(false);
     };
 
-    const step = steps[currentStep];
     const gap = step.yearLimit === 2030 ? (34.7 - 19.9).toFixed(1) : null;
 
     const CustomTooltip = ({ active, payload, label }) => {
@@ -127,7 +134,11 @@ const SDG3Story = () => {
                 <div className="bg-zinc-900 border border-zinc-700 p-3 rounded shadow-xl">
                     <p className="text-zinc-400 text-xs mb-1">{label}</p>
                     {payload.map((entry, index) => (
-                        <p key={index} style={{ color: entry.color }} className="text-sm font-medium">
+                        <p
+                            key={index}
+                            style={{ color: entry.color }}
+                            className="text-sm font-medium"
+                        >
                             {entry.name}: {entry.value}%
                         </p>
                     ))}
@@ -145,12 +156,15 @@ const SDG3Story = () => {
                 width: '76.92%',
                 height: '76.92%',
             }}
-            className="fixed inset-0 bg-black text-white font-mono flex flex-col overflow-hidden p-6 md:p-8">
-
+            className="fixed inset-0 bg-black text-white font-mono flex flex-col overflow-hidden p-6 md:p-8"
+        >
             {/* HEADER SECTION: Fixed height, minimal margin */}
             <div className="flex-none mb-6">
                 <div className="flex items-baseline gap-4 mb-1">
-                    <h1 className="text-4xl md:text-5xl font-bold tracking-tighter" style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}>
+                    <h1
+                        className="text-4xl md:text-5xl font-bold tracking-tighter"
+                        style={{ fontFamily: 'system-ui, -apple-system, sans-serif' }}
+                    >
                         SDG 3.4
                     </h1>
                     <div
@@ -165,7 +179,6 @@ const SDG3Story = () => {
 
             {/* CONTENT GRID: Fills remaining space (flex-1) */}
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-0">
-
                 {/* LEFT COLUMN: Controls & Text */}
                 <div className="lg:col-span-4 flex flex-col justify-between h-full overflow-y-auto pr-2">
                     {/* Story Text */}
@@ -190,15 +203,22 @@ const SDG3Story = () => {
                         <div className="min-h-[100px]">
                             {step.highlight === 'freeze' && gap && (
                                 <div className="border-l-2 border-red-500 pl-4 py-1 animate-in fade-in slide-in-from-left-4 duration-500">
-                                    <div className="text-4xl font-bold text-red-500 mb-0">{gap}%</div>
-                                    <div className="text-zinc-500 text-sm">off target by 2030</div>
+                                    <div className="text-4xl font-bold text-red-500 mb-0">
+                                        {gap}%
+                                    </div>
+                                    <div className="text-zinc-500 text-sm">
+                                        off target by 2030
+                                    </div>
                                 </div>
                             )}
                             {step.highlight === 'solution' && (
                                 <div className="border-l-2 border-emerald-500 pl-4 py-1 animate-in fade-in slide-in-from-left-4 duration-500">
-                                    <div className="text-3xl font-bold text-emerald-500 mb-1">30 min</div>
+                                    <div className="text-3xl font-bold text-emerald-500 mb-1">
+                                        30 min
+                                    </div>
                                     <div className="text-zinc-400 text-sm leading-snug">
-                                        Walk daily. 210 mins/week.<br />
+                                        Walk daily. 210 mins/week.
+                                        <br />
                                         Cross the line.
                                     </div>
                                 </div>
@@ -206,9 +226,21 @@ const SDG3Story = () => {
                             {step.highlight === 'gender' && (
                                 <div className="border-l-2 border-purple-500 pl-4 py-1 animate-in fade-in slide-in-from-left-4 duration-500">
                                     <div className="text-zinc-400 text-sm space-y-1">
-                                        <div>Women: <span className="text-xl font-bold text-purple-400">37.1%</span></div>
-                                        <div>Men: <span className="text-xl font-bold text-blue-400">32.0%</span></div>
-                                        <div className="text-purple-500 font-medium mt-1">5.1% disparity</div>
+                                        <div>
+                                            Women:{' '}
+                                            <span className="text-xl font-bold text-purple-400">
+                                                37.1%
+                                            </span>
+                                        </div>
+                                        <div>
+                                            Men:{' '}
+                                            <span className="text-xl font-bold text-blue-400">
+                                                32.0%
+                                            </span>
+                                        </div>
+                                        <div className="text-purple-500 font-medium mt-1">
+                                            5.1% disparity
+                                        </div>
                                     </div>
                                 </div>
                             )}
@@ -224,7 +256,10 @@ const SDG3Story = () => {
                                     key={idx}
                                     className="h-1 flex-1 transition-all duration-700 rounded-full"
                                     style={{
-                                        backgroundColor: idx <= currentStep ? step.accentColor : '#27272a'
+                                        backgroundColor:
+                                            idx <= currentStep
+                                                ? step.accentColor
+                                                : '#27272a'
                                     }}
                                 />
                             ))}
@@ -232,21 +267,49 @@ const SDG3Story = () => {
 
                         {/* Buttons */}
                         <div className="flex items-center gap-3">
-                            <button onClick={handleReset} className="p-2 text-zinc-600 hover:text-zinc-400 transition" aria-label="Reset">
+                            <button
+                                onClick={handleReset}
+                                className="p-2 text-zinc-600 hover:text-zinc-400 transition"
+                                aria-label="Reset"
+                            >
                                 <RotateCcw size={18} />
                             </button>
-                            <button onClick={handlePrev} disabled={currentStep === 0} className="p-2 text-zinc-600 hover:text-zinc-400 disabled:opacity-20 disabled:cursor-not-allowed transition" aria-label="Previous">
+                            <button
+                                onClick={handlePrev}
+                                disabled={currentStep === 0}
+                                className="p-2 text-zinc-600 hover:text-zinc-400 disabled:opacity-20 disabled:cursor-not-allowed transition"
+                                aria-label="Previous"
+                            >
                                 <SkipBack size={18} />
                             </button>
                             <button
                                 onClick={() => setIsPlaying(!isPlaying)}
                                 disabled={currentStep === steps.length - 1}
                                 className="flex-1 py-2 text-sm font-medium border border-zinc-800 hover:border-zinc-600 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 flex justify-center"
-                                style={{ borderColor: isPlaying ? step.accentColor : undefined, color: isPlaying ? step.accentColor : undefined }}
+                                style={{
+                                    borderColor: isPlaying ? step.accentColor : undefined,
+                                    color: isPlaying ? step.accentColor : undefined
+                                }}
                             >
-                                {isPlaying ? <span className="flex items-center gap-2"><Pause size={16} /> PAUSE</span> : <span className="flex items-center gap-2"><Play size={16} /> {currentStep === steps.length - 1 ? 'RESTART' : 'PLAY'}</span>}
+                                {isPlaying ? (
+                                    <span className="flex items-center gap-2">
+                                        <Pause size={16} /> PAUSE
+                                    </span>
+                                ) : (
+                                    <span className="flex items-center gap-2">
+                                        <Play size={16} />{' '}
+                                        {currentStep === steps.length - 1
+                                            ? 'RESTART'
+                                            : 'PLAY'}
+                                    </span>
+                                )}
                             </button>
-                            <button onClick={handleNext} disabled={currentStep === steps.length - 1} className="p-2 text-zinc-600 hover:text-zinc-400 disabled:opacity-20 disabled:cursor-not-allowed transition" aria-label="Next">
+                            <button
+                                onClick={handleNext}
+                                disabled={currentStep === steps.length - 1}
+                                className="p-2 text-zinc-600 hover:text-zinc-400 disabled:opacity-20 disabled:cursor-not-allowed transition"
+                                aria-label="Next"
+                            >
                                 <SkipForward size={18} />
                             </button>
                         </div>
@@ -261,41 +324,135 @@ const SDG3Story = () => {
                     <div className="flex-1 min-h-0 relative">
                         {/* Chart takes all available height */}
                         <ResponsiveContainer width="100%" height="100%">
-                            <LineChart data={animatedData} margin={{ top: 10, right: 30, left: 0, bottom: 0 }}>
+                            <LineChart
+                                data={animatedData}
+                                margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+                            >
                                 <defs>
-                                    <linearGradient id="gapFill" x1="0" y1="0" x2="0" y2="1">
-                                        <stop offset="0%" stopColor="#ef4444" stopOpacity={0.15} />
-                                        <stop offset="100%" stopColor="#ef4444" stopOpacity={0} />
+                                    <linearGradient
+                                        id="gapFill"
+                                        x1="0"
+                                        y1="0"
+                                        x2="0"
+                                        y2="1"
+                                    >
+                                        <stop
+                                            offset="0%"
+                                            stopColor="#ef4444"
+                                            stopOpacity={0.15}
+                                        />
+                                        <stop
+                                            offset="100%"
+                                            stopColor="#ef4444"
+                                            stopOpacity={0}
+                                        />
                                     </linearGradient>
                                 </defs>
 
-                                <CartesianGrid strokeDasharray="1 3" stroke="#27272a" vertical={false} />
+                                <CartesianGrid
+                                    strokeDasharray="1 3"
+                                    stroke="#27272a"
+                                    vertical={false}
+                                />
                                 <XAxis
                                     dataKey="year"
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: '#71717a', fontSize: 11, fontFamily: 'monospace' }}
+                                    tick={{
+                                        fill: '#71717a',
+                                        fontSize: 11,
+                                        fontFamily: 'monospace'
+                                    }}
                                     dy={10}
                                 />
                                 <YAxis
                                     domain={[15, 42]}
                                     axisLine={false}
                                     tickLine={false}
-                                    tick={{ fill: '#71717a', fontSize: 11, fontFamily: 'monospace' }}
-                                    label={{ value: '%', angle: 0, position: 'insideTopLeft', fill: '#52525b', offset: 10 }}
+                                    tick={{
+                                        fill: '#71717a',
+                                        fontSize: 11,
+                                        fontFamily: 'monospace'
+                                    }}
+                                    label={{
+                                        value: '%',
+                                        angle: 0,
+                                        position: 'insideTopLeft',
+                                        fill: '#52525b',
+                                        offset: 10
+                                    }}
                                 />
                                 <Tooltip content={<CustomTooltip />} />
-                                <Legend wrapperStyle={{ paddingTop: '20px', fontFamily: 'monospace', fontSize: '11px' }} iconType="line" />
+                                <Legend
+                                    wrapperStyle={{
+                                        paddingTop: '20px',
+                                        fontFamily: 'monospace',
+                                        fontSize: '11px'
+                                    }}
+                                    iconType="line"
+                                />
 
                                 {step.showGap && (
-                                    <Area type="monotone" dataKey="reality" stroke="none" fill="url(#gapFill)" name="gap" animationDuration={1200} />
+                                    <Area
+                                        type="monotone"
+                                        dataKey="reality"
+                                        stroke="none"
+                                        fill="url(#gapFill)"
+                                        name="gap"
+                                        animationDuration={1200}
+                                    />
                                 )}
-                                <Line type="monotone" dataKey="target" stroke="#22c55e" strokeWidth={2} strokeDasharray="4 4" name="target" dot={false} animationDuration={1200} />
-                                <Line type="monotone" dataKey="reality" stroke="#ffffff" strokeWidth={3} name="reality" dot={{ r: 5, strokeWidth: 2, fill: '#000', stroke: '#fff' }} activeDot={{ r: 7, strokeWidth: 0, fill: step.accentColor }} animationDuration={1200} />
+                                <Line
+                                    type="monotone"
+                                    dataKey="target"
+                                    stroke="#22c55e"
+                                    strokeWidth={2}
+                                    strokeDasharray="4 4"
+                                    name="target"
+                                    dot={false}
+                                    animationDuration={1200}
+                                />
+                                <Line
+                                    type="monotone"
+                                    dataKey="reality"
+                                    stroke="#ffffff"
+                                    strokeWidth={3}
+                                    name="reality"
+                                    dot={{
+                                        r: 5,
+                                        strokeWidth: 2,
+                                        fill: '#000',
+                                        stroke: '#fff'
+                                    }}
+                                    activeDot={{
+                                        r: 7,
+                                        strokeWidth: 0,
+                                        fill: step.accentColor
+                                    }}
+                                    animationDuration={1200}
+                                />
                                 {step.showGender && (
                                     <>
-                                        <Line type="monotone" dataKey="women" stroke="#a78bfa" strokeWidth={2} strokeDasharray="2 2" name="women" dot={{ r: 3, fill: '#a78bfa' }} animationDuration={800} />
-                                        <Line type="monotone" dataKey="men" stroke="#60a5fa" strokeWidth={2} strokeDasharray="2 2" name="men" dot={{ r: 3, fill: '#60a5fa' }} animationDuration={800} />
+                                        <Line
+                                            type="monotone"
+                                            dataKey="women"
+                                            stroke="#a78bfa"
+                                            strokeWidth={2}
+                                            strokeDasharray="2 2"
+                                            name="women"
+                                            dot={{ r: 3, fill: '#a78bfa' }}
+                                            animationDuration={800}
+                                        />
+                                        <Line
+                                            type="monotone"
+                                            dataKey="men"
+                                            stroke="#60a5fa"
+                                            strokeWidth={2}
+                                            strokeDasharray="2 2"
+                                            name="men"
+                                            dot={{ r: 3, fill: '#60a5fa' }}
+                                            animationDuration={800}
+                                        />
                                     </>
                                 )}
                             </LineChart>
@@ -305,7 +462,8 @@ const SDG3Story = () => {
                     {/* Footer / Data Source - Pushed to bottom right */}
                     <div className="flex-none mt-4 pt-4 border-t border-zinc-900 grid grid-cols-2 gap-4 text-[10px] text-zinc-600 font-mono">
                         <div>
-                            WHO Global Health Observatory (2024)<br />
+                            WHO Global Health Observatory (2024)
+                            <br />
                             Indicator: NCD_PAA
                         </div>
                         <div className="text-right">
