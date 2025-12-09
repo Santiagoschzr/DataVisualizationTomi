@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useMemo } from 'react';
+import React, { useState, useMemo } from 'react';
 import {
     LineChart,
     Line,
@@ -10,18 +10,45 @@ import {
     Area,
     ResponsiveContainer
 } from 'recharts';
-import { Play, Pause, SkipForward, SkipBack, RotateCcw } from 'lucide-react';
+import { SkipForward, SkipBack, RotateCcw } from 'lucide-react';
+
+// 🔢 Full global data 2000–2030 with interpolated years
+const FULL_DATA = [
+    { year: 2000, reality: 23.36, target: 23.40, women: 25.63, men: 20.96 },
+    { year: 2001, reality: 23.60, target: 23.28, women: 25.85, men: 21.23 },
+    { year: 2002, reality: 23.85, target: 23.17, women: 26.09, men: 21.51 },
+    { year: 2003, reality: 24.12, target: 23.05, women: 26.33, men: 21.80 },
+    { year: 2004, reality: 24.40, target: 22.93, women: 26.60, men: 22.10 },
+    { year: 2005, reality: 24.69, target: 22.82, women: 26.88, men: 22.42 },
+    { year: 2006, reality: 25.01, target: 22.70, women: 27.18, men: 22.74 },
+    { year: 2007, reality: 25.34, target: 22.58, women: 27.51, men: 23.08 },
+    { year: 2008, reality: 25.67, target: 22.47, women: 27.85, men: 23.43 },
+    { year: 2009, reality: 26.02, target: 22.35, women: 28.20, men: 23.77 },
+    { year: 2010, reality: 26.37, target: 22.23, women: 28.57, men: 24.11 },
+    { year: 2011, reality: 26.72, target: 22.12, women: 28.95, men: 24.44 },
+    { year: 2012, reality: 27.08, target: 22.00, women: 29.34, men: 24.77 },
+    { year: 2013, reality: 27.46, target: 21.88, women: 29.75, men: 25.11 },
+    { year: 2014, reality: 27.84, target: 21.77, women: 30.16, men: 25.47 },
+    { year: 2015, reality: 28.24, target: 21.65, women: 30.60, men: 25.85 },
+    { year: 2016, reality: 28.66, target: 21.53, women: 31.04, men: 26.25 },
+    { year: 2017, reality: 29.08, target: 21.42, women: 31.49, men: 26.64 },
+    { year: 2018, reality: 29.51, target: 21.30, women: 31.94, men: 27.05 },
+    { year: 2019, reality: 29.94, target: 21.18, women: 32.40, men: 27.46 },
+    { year: 2020, reality: 30.37, target: 21.07, women: 32.86, men: 27.87 },
+    { year: 2021, reality: 30.81, target: 20.95, women: 33.32, men: 28.30 },
+    { year: 2022, reality: 31.27, target: 20.83, women: 33.80, men: 28.74 },
+    { year: 2023, reality: 31.70, target: 20.71, women: 34.25, men: 29.15 },
+    { year: 2024, reality: 32.13, target: 20.59, women: 34.70, men: 29.56 },
+    { year: 2025, reality: 32.56, target: 20.47, women: 35.15, men: 29.97 },
+    { year: 2026, reality: 32.99, target: 20.35, women: 35.60, men: 30.38 },
+    { year: 2027, reality: 33.42, target: 20.23, women: 36.05, men: 30.79 },
+    { year: 2028, reality: 33.85, target: 20.11, women: 36.50, men: 31.20 },
+    { year: 2029, reality: 34.28, target: 20.00, women: 36.80, men: 31.60 },
+    { year: 2030, reality: 34.70, target: 19.90, women: 37.10, men: 32.00 },
+];
 
 const SDG3Story = () => {
-    const [currentStep, setCurrentStep] = useState(0);
-    const [isPlaying, setIsPlaying] = useState(false);
-
-    const fullData = [
-        { year: 2000, reality: 23.4, target: 23.40, women: 25.8, men: 21.0 },
-        { year: 2010, reality: 26.4, target: 22.23, women: 28.2, men: 24.1 },
-        { year: 2022, reality: 31.3, target: 20.83, women: 33.8, men: 28.7 },
-        { year: 2030, reality: 34.7, target: 19.90, women: 37.1, men: 32.0 }
-    ];
+    const [currentStepIndex, setCurrentStepIndex] = useState(0);
 
     const steps = [
         {
@@ -83,47 +110,30 @@ const SDG3Story = () => {
         }
     ];
 
-    const step = steps[currentStep];
+    const step = steps[currentStepIndex];
 
-    // 🔑 Derive animatedData from currentStep instead of storing in state
-    const animatedData = useMemo(
-        () => fullData.filter(d => d.year <= (step.yearLimit || 2030)),
-        [step.yearLimit]
-    );
+    // Show data up to current step's year limit
+    const animatedData = useMemo(() => {
+        const targetIdx = FULL_DATA.findIndex(d => d.year === step.yearLimit);
+        return FULL_DATA.slice(0, targetIdx + 1);
+    }, [step.yearLimit]);
 
-    useEffect(() => {
-        let interval;
-        if (isPlaying && currentStep < steps.length - 1) {
-            interval = setInterval(() => {
-                setCurrentStep(prev => {
-                    if (prev >= steps.length - 1) {
-                        setIsPlaying(false);
-                        return prev;
-                    }
-                    return prev + 1;
-                });
-            }, currentStep === 0 ? 2000 : 6000);
-        }
-        return () => clearInterval(interval);
-    }, [isPlaying, currentStep, steps.length]);
+    const currentYear = step.yearLimit;
 
     const handleNext = () => {
-        if (currentStep < steps.length - 1) {
-            setCurrentStep(c => c + 1);
+        if (currentStepIndex < steps.length - 1) {
+            setCurrentStepIndex(prev => prev + 1);
         }
-        setIsPlaying(false);
     };
 
     const handlePrev = () => {
-        if (currentStep > 0) {
-            setCurrentStep(c => c - 1);
+        if (currentStepIndex > 0) {
+            setCurrentStepIndex(prev => prev - 1);
         }
-        setIsPlaying(false);
     };
 
     const handleReset = () => {
-        setCurrentStep(0);
-        setIsPlaying(false);
+        setCurrentStepIndex(0);
     };
 
     const gap = step.yearLimit === 2030 ? (34.7 - 19.9).toFixed(1) : null;
@@ -158,7 +168,6 @@ const SDG3Story = () => {
             }}
             className="fixed inset-0 bg-black text-white font-mono flex flex-col overflow-hidden p-6 md:p-8"
         >
-            {/* HEADER SECTION: Fixed height, minimal margin */}
             <div className="flex-none mb-6">
                 <div className="flex items-baseline gap-4 mb-1">
                     <h1
@@ -177,11 +186,8 @@ const SDG3Story = () => {
                 </p>
             </div>
 
-            {/* CONTENT GRID: Fills remaining space (flex-1) */}
             <div className="flex-1 grid grid-cols-1 lg:grid-cols-12 gap-8 min-h-0">
-                {/* LEFT COLUMN: Controls & Text */}
                 <div className="lg:col-span-4 flex flex-col justify-between h-full overflow-y-auto pr-2">
-                    {/* Story Text */}
                     <div>
                         <div
                             className="text-xs uppercase tracking-widest mb-2 transition-colors duration-700"
@@ -195,11 +201,13 @@ const SDG3Story = () => {
                         >
                             {step.title}
                         </h2>
-                        <p className="text-zinc-400 text-base leading-relaxed mb-6">
+                        <p className="text-zinc-400 text-base leading-relaxed mb-2">
                             {step.description}
                         </p>
+                        <p className="text-xs text-zinc-600 mb-6">
+                            Year shown: <span className="text-zinc-300">{currentYear}</span>
+                        </p>
 
-                        {/* Dynamic Highlights */}
                         <div className="min-h-[100px]">
                             {step.highlight === 'freeze' && gap && (
                                 <div className="border-l-2 border-red-500 pl-4 py-1 animate-in fade-in slide-in-from-left-4 duration-500">
@@ -247,9 +255,7 @@ const SDG3Story = () => {
                         </div>
                     </div>
 
-                    {/* Controls (Pushed to bottom via justify-between) */}
                     <div className="pb-2">
-                        {/* Progress Bar */}
                         <div className="flex items-center gap-1 mb-4">
                             {steps.map((_, idx) => (
                                 <div
@@ -257,7 +263,7 @@ const SDG3Story = () => {
                                     className="h-1 flex-1 transition-all duration-700 rounded-full"
                                     style={{
                                         backgroundColor:
-                                            idx <= currentStep
+                                            idx <= currentStepIndex
                                                 ? step.accentColor
                                                 : '#27272a'
                                     }}
@@ -265,7 +271,6 @@ const SDG3Story = () => {
                             ))}
                         </div>
 
-                        {/* Buttons */}
                         <div className="flex items-center gap-3">
                             <button
                                 onClick={handleReset}
@@ -276,37 +281,27 @@ const SDG3Story = () => {
                             </button>
                             <button
                                 onClick={handlePrev}
-                                disabled={currentStep === 0}
+                                disabled={currentStepIndex === 0}
                                 className="p-2 text-zinc-600 hover:text-zinc-400 disabled:opacity-20 disabled:cursor-not-allowed transition"
                                 aria-label="Previous"
                             >
                                 <SkipBack size={18} />
                             </button>
                             <button
-                                onClick={() => setIsPlaying(!isPlaying)}
-                                disabled={currentStep === steps.length - 1}
-                                className="flex-1 py-2 text-sm font-medium border border-zinc-800 hover:border-zinc-600 rounded disabled:opacity-30 disabled:cursor-not-allowed transition-all duration-300 flex justify-center"
+                                onClick={handleNext}
+                                disabled={currentStepIndex === steps.length - 1}
+                                className="flex-1 py-2 text-sm font-medium border rounded transition-all duration-300"
                                 style={{
-                                    borderColor: isPlaying ? step.accentColor : undefined,
-                                    color: isPlaying ? step.accentColor : undefined
+                                    borderColor: step.accentColor,
+                                    color: step.accentColor,
+                                    opacity: currentStepIndex === steps.length - 1 ? 0.3 : 1
                                 }}
                             >
-                                {isPlaying ? (
-                                    <span className="flex items-center gap-2">
-                                        <Pause size={16} /> PAUSE
-                                    </span>
-                                ) : (
-                                    <span className="flex items-center gap-2">
-                                        <Play size={16} />{' '}
-                                        {currentStep === steps.length - 1
-                                            ? 'RESTART'
-                                            : 'PLAY'}
-                                    </span>
-                                )}
+                                NEXT
                             </button>
                             <button
                                 onClick={handleNext}
-                                disabled={currentStep === steps.length - 1}
+                                disabled={currentStepIndex === steps.length - 1}
                                 className="p-2 text-zinc-600 hover:text-zinc-400 disabled:opacity-20 disabled:cursor-not-allowed transition"
                                 aria-label="Next"
                             >
@@ -314,15 +309,13 @@ const SDG3Story = () => {
                             </button>
                         </div>
                         <div className="text-xs text-center text-zinc-700 mt-2">
-                            Step {currentStep + 1} of {steps.length}
+                            Step {currentStepIndex + 1} of {steps.length}
                         </div>
                     </div>
                 </div>
 
-                {/* RIGHT COLUMN: Chart */}
                 <div className="lg:col-span-8 flex flex-col h-full min-h-0">
                     <div className="flex-1 min-h-0 relative">
-                        {/* Chart takes all available height */}
                         <ResponsiveContainer width="100%" height="100%">
                             <LineChart
                                 data={animatedData}
@@ -358,6 +351,7 @@ const SDG3Story = () => {
                                     dataKey="year"
                                     axisLine={false}
                                     tickLine={false}
+                                    ticks={[2000, 2010, 2022, 2030]}
                                     tick={{
                                         fill: '#71717a',
                                         fontSize: 11,
@@ -399,7 +393,8 @@ const SDG3Story = () => {
                                         stroke="none"
                                         fill="url(#gapFill)"
                                         name="gap"
-                                        animationDuration={1200}
+                                        animationDuration={800}
+                                        animationEasing="ease-in-out"
                                     />
                                 )}
                                 <Line
@@ -410,7 +405,9 @@ const SDG3Story = () => {
                                     strokeDasharray="4 4"
                                     name="target"
                                     dot={false}
-                                    animationDuration={1200}
+                                    activeDot={false}
+                                    animationDuration={800}
+                                    animationEasing="ease-in-out"
                                 />
                                 <Line
                                     type="monotone"
@@ -418,18 +415,10 @@ const SDG3Story = () => {
                                     stroke="#ffffff"
                                     strokeWidth={3}
                                     name="reality"
-                                    dot={{
-                                        r: 5,
-                                        strokeWidth: 2,
-                                        fill: '#000',
-                                        stroke: '#fff'
-                                    }}
-                                    activeDot={{
-                                        r: 7,
-                                        strokeWidth: 0,
-                                        fill: step.accentColor
-                                    }}
-                                    animationDuration={1200}
+                                    dot={false}
+                                    activeDot={false}
+                                    animationDuration={800}
+                                    animationEasing="ease-in-out"
                                 />
                                 {step.showGender && (
                                     <>
@@ -440,8 +429,10 @@ const SDG3Story = () => {
                                             strokeWidth={2}
                                             strokeDasharray="2 2"
                                             name="women"
-                                            dot={{ r: 3, fill: '#a78bfa' }}
+                                            dot={false}
+                                            activeDot={false}
                                             animationDuration={800}
+                                            animationEasing="ease-in-out"
                                         />
                                         <Line
                                             type="monotone"
@@ -450,8 +441,10 @@ const SDG3Story = () => {
                                             strokeWidth={2}
                                             strokeDasharray="2 2"
                                             name="men"
-                                            dot={{ r: 3, fill: '#60a5fa' }}
+                                            dot={false}
+                                            activeDot={false}
                                             animationDuration={800}
+                                            animationEasing="ease-in-out"
                                         />
                                     </>
                                 )}
@@ -459,7 +452,6 @@ const SDG3Story = () => {
                         </ResponsiveContainer>
                     </div>
 
-                    {/* Footer / Data Source - Pushed to bottom right */}
                     <div className="flex-none mt-4 pt-4 border-t border-zinc-900 grid grid-cols-2 gap-4 text-[10px] text-zinc-600 font-mono">
                         <div>
                             WHO Global Health Observatory (2024)
